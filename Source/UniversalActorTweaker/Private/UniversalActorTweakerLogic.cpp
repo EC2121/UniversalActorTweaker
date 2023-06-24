@@ -31,10 +31,7 @@ void FUniversalActorTweakerLogic::OnPropertyChanged(const FPropertyChangedEvent&
 	UClass* ChangedClass = InPropertyChanged.Property->GetOwnerClass();
 	if (ChangedClass == nullptr)
 	{
-		if (ChangedClass == nullptr)
-		{
-			return;
-		}
+		return;
 	}
 	void* NewValue = InPropertyChanged.Property->AllocateAndInitializeValue();
 	bool bIsClassComponent = false;

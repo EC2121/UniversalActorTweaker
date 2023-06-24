@@ -1,10 +1,10 @@
-﻿#include "Kismet/GameplayStatics.h"
+﻿#include "Slate/SUniversalActorTweakerWindow.h"
+#include "Kismet/GameplayStatics.h"
 #include "Modules/ModuleManager.h"
 #include "PropertyEditorModule.h"
 #include "SceneOutlinerModule.h"
 #include "SceneOutlinerPublicTypes.h"
 #include "Slate/Public/Widgets/Input/SSearchBox.h"
-#include "Slate/SUniversalActorTweakerWindow.h"
 #include "Widgets/Layout/SScrollBox.h"
 
 #define LOCTEXT_NAMESPACE "SUniversalActorTweakerWindow"

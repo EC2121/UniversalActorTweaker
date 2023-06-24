@@ -1,8 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
+#include "UniversalActorTweaker.h"
 
 #include "Slate/SUniversalActorTweakerWindow.h"
 #include "ToolMenus.h"
-#include "UniversalActorTweaker.h"
 #include "UniversalActorTweakerCommands.h"
 #include "UniversalActorTweakerStyle.h"
 
