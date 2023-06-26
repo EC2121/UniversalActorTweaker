@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
+class FUniversalActorTweakerLogic;
 class FToolBarBuilder;
 class FMenuBuilder;
 
@@ -30,5 +31,6 @@ private:
 
 
 private:
+	TSharedPtr<FUniversalActorTweakerLogic> UniversalTweakerLogic;
 	TSharedPtr<class FUICommandList> PluginCommands;
 };

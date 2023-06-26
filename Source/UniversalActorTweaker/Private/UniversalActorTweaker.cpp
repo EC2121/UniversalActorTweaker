@@ -13,12 +13,12 @@ static const FName UniversalActorTweakerTabName("UniversalActorTweaker");
 void FUniversalActorTweakerModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
-	
+
 	FUniversalActorTweakerStyle::Initialize();
 	FUniversalActorTweakerStyle::ReloadTextures();
 
 	FUniversalActorTweakerCommands::Register();
-	
+
 	PluginCommands = MakeShareable(new FUICommandList);
 
 	PluginCommands->MapAction(
@@ -26,8 +26,11 @@ void FUniversalActorTweakerModule::StartupModule()
 		FExecuteAction::CreateRaw(this, &FUniversalActorTweakerModule::PluginButtonClicked),
 		FCanExecuteAction());
 
-	UToolMenus::RegisterStartupCallback(FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FUniversalActorTweakerModule::RegisterMenus));
-	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(UniversalActorTweakerTabName,FOnSpawnTab::CreateRaw(this,&FUniversalActorTweakerModule::OnSpawnTab));
+	UToolMenus::RegisterStartupCallback(
+		FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FUniversalActorTweakerModule::RegisterMenus));
+	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(UniversalActorTweakerTabName,
+	                                                  FOnSpawnTab::CreateRaw(
+		                                                  this, &FUniversalActorTweakerModule::OnSpawnTab));
 }
 
 void FUniversalActorTweakerModule::ShutdownModule()
@@ -46,21 +49,15 @@ void FUniversalActorTweakerModule::ShutdownModule()
 
 void FUniversalActorTweakerModule::PluginButtonClicked()
 {
-	// Put your "OnButtonClicked" stuff here
-	// FText DialogText = FText::Format(
-	// 						LOCTEXT("PluginButtonDialogText", "Add code to {0} in {1} to override this button's actions"),
-	// 						FText::FromString(TEXT("FUniversalActorTweakerModule::PluginButtonClicked()")),
-	// 						FText::FromString(TEXT("UniversalActorTweaker.cpp"))
-	// 				   );
-	// FMessageDialog::Open(EAppMsgType::Ok, DialogText);
 	FGlobalTabmanager::Get()->TryInvokeTab(UniversalActorTweakerTabName);
 }
 
 TSharedRef<SDockTab> FUniversalActorTweakerModule::OnSpawnTab(const FSpawnTabArgs& InSpawnTabArgs)
 {
-	TSharedRef<SDockTab> DockTab =	SNew(SDockTab)
-									.TabRole(ETabRole::NomadTab);
-	DockTab->SetContent(SNew(SUniversalActorTweakerWindow));
+	TSharedRef<SDockTab> DockTab = SNew(SDockTab)
+		.TabRole(ETabRole::NomadTab);
+	UniversalTweakerLogic = MakeShared<FUniversalActorTweakerLogic>();
+	DockTab->SetContent(SNew(SUniversalActorTweakerWindow, UniversalTweakerLogic.ToSharedRef()));
 	return DockTab;
 }
 
@@ -87,7 +84,8 @@ void FUniversalActorTweakerModule::RegisterMenus()
 		{
 			FToolMenuSection& Section = ToolbarMenu->FindOrAddSection("PluginTools");
 			{
-				FToolMenuEntry& Entry = Section.AddEntry(FToolMenuEntry::InitToolBarButton(FUniversalActorTweakerCommands::Get().PluginAction));
+				FToolMenuEntry& Entry = Section.AddEntry(
+					FToolMenuEntry::InitToolBarButton(FUniversalActorTweakerCommands::Get().PluginAction));
 				Entry.SetCommandList(PluginCommands);
 			}
 		}
@@ -95,5 +93,5 @@ void FUniversalActorTweakerModule::RegisterMenus()
 }
 
 #undef LOCTEXT_NAMESPACE
-	
+
 IMPLEMENT_MODULE(FUniversalActorTweakerModule, UniversalActorTweaker)

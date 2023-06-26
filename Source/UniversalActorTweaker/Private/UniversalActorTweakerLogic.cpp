@@ -1,6 +1,8 @@
 ﻿#include "UniversalActorTweakerLogic.h"
 #include "Kismet/GameplayStatics.h"
 
+#define LOCTEXT_NAMESPACE "UniversalActorTweakerLogic"
+
 void FUniversalActorTweakerLogic::SetClickedObject(AActor* InClickedObject)
 {
 	if (InClickedObject != nullptr)
@@ -9,10 +11,9 @@ void FUniversalActorTweakerLogic::SetClickedObject(AActor* InClickedObject)
 	}
 }
 
-
 void FUniversalActorTweakerLogic::OnPropertyChanged(const FPropertyChangedEvent& InPropertyChanged)
 {
-	TArray<AActor*> FoundActors;
+	TArray<TObjectPtr<AActor>> FoundActors;
 	const UWorld* World = GetWorld();
 	if (World == nullptr)
 	{
@@ -57,18 +58,16 @@ void FUniversalActorTweakerLogic::OnPropertyChanged(const FPropertyChangedEvent&
 
 	if (NewValue != nullptr)
 	{
-		const FScopedTransaction Transaction(NSLOCTEXT("FUniversalActorTweakerLogic", "FUniversalActorTweakerSnapshot",
-		                                               "UniversalActorTweakerUndo"));
-		TObjectPtr<UObject> FoundContainer = nullptr;
+		const FScopedTransaction Transaction(LOCTEXT("FUniversalActorTweakerSnapshot",
+		                                               "Property changed from Universal Tweaker"));
+
 		for (AActor* FoundActor : FoundActors)
 		{
 			if (bIsPrimitiveComponent)
 			{
 				SetValueInPrimitiveComponentContainer(FoundActor, InPropertyChanged, NewValue);
-				continue;
 			}
-			FoundContainer = nullptr;
-			if (bIsComponent)
+			else if (bIsComponent)
 			{
 				TSet<UActorComponent*> ActorComponents = FoundActor->GetComponents();
 				for (UActorComponent* ActorComponent : ActorComponents)
@@ -76,15 +75,13 @@ void FUniversalActorTweakerLogic::OnPropertyChanged(const FPropertyChangedEvent&
 					FString ActorPath = ActorComponent->GetPathName();
 					if (ActorPath.Contains(ComponentName))
 					{
-						FoundContainer = ActorComponent;
-						SetValueInObjectContainer(FoundContainer, FoundActor, InPropertyChanged, NewValue);
+						SetValueInObjectContainer(ActorComponent, FoundActor, InPropertyChanged, NewValue);
 					}
 				}
 			}
-			if (bIsAnActor)
+			else if (bIsAnActor)
 			{
-				FoundContainer = FoundActor;
-				SetValueInObjectContainer(FoundContainer, FoundActor, InPropertyChanged, NewValue);
+				SetValueInObjectContainer(FoundActor, FoundActor, InPropertyChanged, NewValue);
 			}
 		}
 	}
@@ -114,12 +111,12 @@ void FUniversalActorTweakerLogic::SetComponentName(const FString InComponentFull
 }
 
 void FUniversalActorTweakerLogic::PopulateActorsArray(const UWorld* InWorldContext,
-                                                      TArray<AActor*>& InArrayToPopulate) const
+                                                      TArray<TObjectPtr<AActor>>& OutArrayToPopulate) const
 {
 	UClass* ClickedClass = ClickedObject.GetClass();
 	if (ClickedClass != nullptr)
 	{
-		UGameplayStatics::GetAllActorsOfClass(InWorldContext, ClickedClass, InArrayToPopulate);
+		UGameplayStatics::GetAllActorsOfClass(InWorldContext, ClickedClass, OutArrayToPopulate);
 	}
 }
 
@@ -143,8 +140,7 @@ void FUniversalActorTweakerLogic::GetValueFromComponent(const FPropertyChangedEv
 void FUniversalActorTweakerLogic::GetValueFromPrimitive(const FPropertyChangedEvent& InPropertyChanged,
                                                         void* InNewValue) const
 {
-	UActorComponent* PrimitiveComponent = Cast<AActor>(ClickedObject)->GetComponentByClass(
-		UPrimitiveComponent::StaticClass());
+	UActorComponent* PrimitiveComponent = Cast<AActor>(ClickedObject)->GetComponentByClass(UPrimitiveComponent::StaticClass());
 	if (PrimitiveComponent != nullptr)
 	{
 		FBodyInstance* BodyInstance = Cast<UPrimitiveComponent>(PrimitiveComponent)->GetBodyInstance();
@@ -157,7 +153,7 @@ void FUniversalActorTweakerLogic::GetValueFromPrimitive(const FPropertyChangedEv
 	}
 }
 
-void FUniversalActorTweakerLogic::SetValueInPrimitiveComponentContainer(const AActor* InActor,
+void FUniversalActorTweakerLogic::SetValueInPrimitiveComponentContainer(const TObjectPtr<AActor> InActor,
                                                                         const FPropertyChangedEvent& InPropertyChanged,
                                                                         const void* InNewValue) const
 {
@@ -173,7 +169,7 @@ void FUniversalActorTweakerLogic::SetValueInPrimitiveComponentContainer(const AA
 	}
 }
 
-void FUniversalActorTweakerLogic::SetValueInObjectContainer(TObjectPtr<UObject> InContainer, const AActor* InActor,
+void FUniversalActorTweakerLogic::SetValueInObjectContainer(TObjectPtr<UObject> InContainer, const TObjectPtr<AActor> InActor,
                                                             const FPropertyChangedEvent& InPropertyChanged,
                                                             const void* InNewValue)
 {
@@ -192,3 +188,5 @@ void FUniversalActorTweakerLogic::SetValueInObjectContainer(TObjectPtr<UObject> 
 		       *InActor->GetFName().ToString());
 	}
 }
+
+#undef LOCTEXT_NAMESPACE 

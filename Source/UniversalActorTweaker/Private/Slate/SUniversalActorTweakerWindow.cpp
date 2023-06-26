@@ -9,12 +9,11 @@
 
 #define LOCTEXT_NAMESPACE "SUniversalActorTweakerWindow"
 
-void SUniversalActorTweakerWindow::Construct(const FArguments& InArgs)
+void SUniversalActorTweakerWindow::Construct(const FArguments& InArgs, TSharedRef<FUniversalActorTweakerLogic> InUniversalTweaker)
 {
-	UniversalActorTweakerLogic = MakeShared<FUniversalActorTweakerLogic>();
+	UniversalActorTweakerLogic = InUniversalTweaker;
 	
-	FSceneOutlinerModule& SceneOutlinerModule = FModuleManager::LoadModuleChecked<
-		FSceneOutlinerModule>("SceneOutliner");
+	FSceneOutlinerModule& SceneOutlinerModule = FModuleManager::LoadModuleChecked<FSceneOutlinerModule>("SceneOutliner");
 	FPropertyEditorModule& EditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 	
 	FSceneOutlinerInitializationOptions InitOptions;
@@ -29,8 +28,7 @@ void SUniversalActorTweakerWindow::Construct(const FArguments& InArgs)
 	DetailsViewArgs.bShowOptions = true;
 	DetailsViewArgs.bShowModifiedPropertiesOption = true;
 	DetailsView = EditorModule.CreateDetailView(DetailsViewArgs);
-	DetailsView->OnFinishedChangingProperties().AddRaw(UniversalActorTweakerLogic.Get(),
-		&FUniversalActorTweakerLogic::OnPropertyChanged);
+	DetailsView->OnFinishedChangingProperties().AddSP(InUniversalTweaker, &FUniversalActorTweakerLogic::OnPropertyChanged);
 	ChildSlot
 	[
 
@@ -60,10 +58,13 @@ void SUniversalActorTweakerWindow::Construct(const FArguments& InArgs)
 	];
 }
 
-void SUniversalActorTweakerWindow::OnActorPicked(AActor* InActor)
+void SUniversalActorTweakerWindow::OnActorPicked(AActor* InActor) const
 {
-	UniversalActorTweakerLogic->SetClickedObject(InActor);
-	DetailsView->SetObject(InActor, true);
+	if (UniversalActorTweakerLogic.IsValid())
+	{
+		UniversalActorTweakerLogic.Pin()->SetClickedObject(InActor);
+		DetailsView->SetObject(InActor, true);
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

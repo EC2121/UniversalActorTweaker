@@ -10,10 +10,11 @@ class SUniversalActorTweakerWindow : public SCompoundWidget
 public:
 	SLATE_BEGIN_ARGS(SUniversalActorTweakerWindow){}
 	SLATE_END_ARGS()
-	void Construct(const FArguments& InArgs);
-	void OnActorPicked(AActor* InActor);
+	void Construct(const FArguments& InArgs, TSharedRef<FUniversalActorTweakerLogic> InUniversalTweaker);
+	void OnActorPicked(AActor* InActor) const;
+
 private:
-	TSharedPtr<FUniversalActorTweakerLogic> UniversalActorTweakerLogic;
+	TWeakPtr<FUniversalActorTweakerLogic> UniversalActorTweakerLogic;
 	TSharedPtr<IDetailsView> DetailsView;
 	TSharedPtr<ISceneOutliner> SceneOutliner;
 };
