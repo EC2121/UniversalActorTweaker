@@ -21,7 +21,7 @@ void SUniversalActorTweakerWindow::Construct(const FArguments& InArgs, TSharedRe
 	
 	SceneOutliner = SceneOutlinerModule.CreateActorPicker(InitOptions, FOnActorPicked::CreateSP(this,
 		                                                      &SUniversalActorTweakerWindow::OnActorPicked));
-	
+
 	FDetailsViewArgs DetailsViewArgs;
 	DetailsViewArgs.NameAreaSettings = FDetailsViewArgs::HideNameArea;
 	DetailsViewArgs.bAllowSearch = true;

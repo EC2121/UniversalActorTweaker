@@ -19,15 +19,18 @@ void FUniversalActorTweakerLogic::OnPropertyChanged(const FPropertyChangedEvent&
 	{
 		return;
 	}
+
 	PopulateActorsArray(World, FoundActors);
 	const int32 NumberOfObjectsBeginEdited = InPropertyChanged.GetNumObjectsBeingEdited();
+
 	if (NumberOfObjectsBeginEdited <= 0)
 	{
 		return;
 	}
-	void* NewValue = InPropertyChanged.Property->AllocateAndInitializeValue();
 
+	void* NewValue = InPropertyChanged.Property->AllocateAndInitializeValue();
 	const UClass* ChangedClass = InPropertyChanged.Property->GetOwnerClass();
+
 	bool bIsComponent = false;
 	bool bIsAnActor = false;
 	bool bIsPrimitiveComponent = false;
@@ -51,15 +54,13 @@ void FUniversalActorTweakerLogic::OnPropertyChanged(const FPropertyChangedEvent&
 	}
 	else
 	{
-		GetValueFromPrimitive(InPropertyChanged, NewValue);
+		GetValueFromPrimitiveComponent(InPropertyChanged, NewValue);
 		bIsPrimitiveComponent = true;
 	}
 
-
 	if (NewValue != nullptr)
 	{
-		const FScopedTransaction Transaction(LOCTEXT("FUniversalActorTweakerSnapshot",
-		                                               "Property changed from Universal Tweaker"));
+		const FScopedTransaction Transaction(LOCTEXT("FUniversalActorTweakerSnapshot", "Property changed from Universal Tweaker"));
 
 		for (AActor* FoundActor : FoundActors)
 		{
@@ -70,6 +71,7 @@ void FUniversalActorTweakerLogic::OnPropertyChanged(const FPropertyChangedEvent&
 			else if (bIsComponent)
 			{
 				TSet<UActorComponent*> ActorComponents = FoundActor->GetComponents();
+
 				for (UActorComponent* ActorComponent : ActorComponents)
 				{
 					FString ActorPath = ActorComponent->GetPathName();
@@ -107,11 +109,11 @@ void FUniversalActorTweakerLogic::SetComponentName(const FString InComponentFull
 	FString EditedComponentPath = InComponentFullPath;
 	TArray<FString> SplitedString;
 	InComponentFullPath.ParseIntoArray(SplitedString,TEXT("."), true);
+
 	ComponentName = SplitedString.Last();
 }
 
-void FUniversalActorTweakerLogic::PopulateActorsArray(const UWorld* InWorldContext,
-                                                      TArray<TObjectPtr<AActor>>& OutArrayToPopulate) const
+void FUniversalActorTweakerLogic::PopulateActorsArray(const UWorld* InWorldContext, TArray<TObjectPtr<AActor>>& OutArrayToPopulate) const
 {
 	UClass* ClickedClass = ClickedObject.GetClass();
 	if (ClickedClass != nullptr)
@@ -120,8 +122,7 @@ void FUniversalActorTweakerLogic::PopulateActorsArray(const UWorld* InWorldConte
 	}
 }
 
-void FUniversalActorTweakerLogic::GetValueFromComponent(const FPropertyChangedEvent& InPropertyChanged,
-                                                        void* InNewValue)
+void FUniversalActorTweakerLogic::GetValueFromComponent(const FPropertyChangedEvent& InPropertyChanged, void* InNewValue)
 {
 	SetComponentName(InPropertyChanged.GetObjectBeingEdited(0)->GetPathName());
 
@@ -130,63 +131,49 @@ void FUniversalActorTweakerLogic::GetValueFromComponent(const FPropertyChangedEv
 		FString ActorPath = ActorComponent->GetPathName();
 		if (ActorPath.Contains(ComponentName))
 		{
-			InPropertyChanged.Property->GetValue_InContainer(
-				ActorComponent,
-				InNewValue);
+			InPropertyChanged.Property->GetValue_InContainer(ActorComponent, InNewValue);
 		}
 	}
 }
 
-void FUniversalActorTweakerLogic::GetValueFromPrimitive(const FPropertyChangedEvent& InPropertyChanged,
-                                                        void* InNewValue) const
+void FUniversalActorTweakerLogic::GetValueFromPrimitiveComponent(const FPropertyChangedEvent& InPropertyChanged, void* InNewValue) const
 {
 	UActorComponent* PrimitiveComponent = Cast<AActor>(ClickedObject)->GetComponentByClass(UPrimitiveComponent::StaticClass());
 	if (PrimitiveComponent != nullptr)
 	{
-		FBodyInstance* BodyInstance = Cast<UPrimitiveComponent>(PrimitiveComponent)->GetBodyInstance();
+		const FBodyInstance* BodyInstance = Cast<UPrimitiveComponent>(PrimitiveComponent)->GetBodyInstance();
 		if (BodyInstance != nullptr)
 		{
-			InPropertyChanged.Property->GetValue_InContainer(
-				BodyInstance,
-				InNewValue);
+			InPropertyChanged.Property->GetValue_InContainer(BodyInstance, InNewValue);
 		}
 	}
 }
 
-void FUniversalActorTweakerLogic::SetValueInPrimitiveComponentContainer(const TObjectPtr<AActor> InActor,
-                                                                        const FPropertyChangedEvent& InPropertyChanged,
-                                                                        const void* InNewValue) const
+void FUniversalActorTweakerLogic::SetValueInPrimitiveComponentContainer(const TObjectPtr<AActor> InActor, const FPropertyChangedEvent& InPropertyChanged, const void* InNewValue) const
 {
-	UActorComponent* PrimitiveComponent =
-		InActor->GetComponentByClass(UPrimitiveComponent::StaticClass());
+	UActorComponent* PrimitiveComponent = InActor->GetComponentByClass(UPrimitiveComponent::StaticClass());
 	if (PrimitiveComponent != nullptr)
 	{
 		FBodyInstance* BodyInstance = Cast<UPrimitiveComponent>(PrimitiveComponent)->GetBodyInstance();
 		InPropertyChanged.Property->SetValue_InContainer(BodyInstance, InNewValue);
-		UE_LOG(LogTemp, Log, TEXT("Succesfully changed %s property of %s Actor"),
-		       *InPropertyChanged.Property->GetFName().ToString(),
-		       *InActor->GetFName().ToString());
 	}
 }
 
-void FUniversalActorTweakerLogic::SetValueInObjectContainer(TObjectPtr<UObject> InContainer, const TObjectPtr<AActor> InActor,
-                                                            const FPropertyChangedEvent& InPropertyChanged,
-                                                            const void* InNewValue)
+void FUniversalActorTweakerLogic::SetValueInObjectContainer(TObjectPtr<UObject> InContainer, const TObjectPtr<AActor> InActor, const FPropertyChangedEvent& InPropertyChanged, const void* InNewValue)
 {
-	FProperty* FoundProperty = InContainer->GetClass()->FindPropertyByName(
-		InPropertyChanged.GetPropertyName());
+	FProperty* FoundProperty = InContainer->GetClass()->FindPropertyByName(InPropertyChanged.GetPropertyName());
 	if (FoundProperty != nullptr)
 	{
 		InContainer->Modify(true);
 		InContainer->PreEditChange(FoundProperty);
+
 		FoundProperty->SetValue_InContainer(InContainer, InNewValue);
+
 		FPropertyChangedEvent Args(FoundProperty);
 		Args.ChangeType = EPropertyChangeType::ValueSet;
+
 		InContainer->PostEditChangeProperty(Args);
-		UE_LOG(LogTemp, Log, TEXT("Succesfully changed %s property of %s Actor"),
-		       *InPropertyChanged.Property->GetFName().ToString(),
-		       *InActor->GetFName().ToString());
 	}
 }
 
-#undef LOCTEXT_NAMESPACE 
+#undef LOCTEXT_NAMESPACE
