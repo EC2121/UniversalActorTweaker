@@ -5,14 +5,13 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
-class FUniversalActorTweakerLogic;
-class FToolBarBuilder;
 class FMenuBuilder;
+class FToolBarBuilder;
+class FUniversalActorTweakerLogic;
 
 class FUniversalActorTweakerModule : public IModuleInterface
 {
 public:
-
 	/** IModuleInterface implementation */
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
@@ -26,11 +25,11 @@ public:
 		static const FName ModuleName = "UniversalActorTweakerModule";
 		return FModuleManager::LoadModuleChecked<FUniversalActorTweakerModule>(ModuleName);
 	}
+
 private:
 	void RegisterMenus();
 
-
 private:
 	TSharedPtr<FUniversalActorTweakerLogic> UniversalTweakerLogic;
-	TSharedPtr<class FUICommandList> PluginCommands;
+	TSharedPtr<FUICommandList> PluginCommands;
 };

@@ -1,6 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
-#include "UniversalActorTweaker.h"
 
+#include "UniversalActorTweaker.h"
 #include "Slate/SUniversalActorTweakerWindow.h"
 #include "ToolMenus.h"
 #include "UniversalActorTweakerCommands.h"
@@ -37,14 +37,11 @@ void FUniversalActorTweakerModule::ShutdownModule()
 {
 	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
 	// we call this function before unloading the module.
-
 	UToolMenus::UnRegisterStartupCallback(this);
-
 	UToolMenus::UnregisterOwner(this);
+	FUniversalActorTweakerCommands::Unregister();
 
 	FUniversalActorTweakerStyle::Shutdown();
-
-	FUniversalActorTweakerCommands::Unregister();
 }
 
 void FUniversalActorTweakerModule::PluginButtonClicked()
@@ -56,7 +53,9 @@ TSharedRef<SDockTab> FUniversalActorTweakerModule::OnSpawnTab(const FSpawnTabArg
 {
 	TSharedRef<SDockTab> DockTab = SNew(SDockTab)
 		.TabRole(ETabRole::NomadTab);
+
 	UniversalTweakerLogic = MakeShared<FUniversalActorTweakerLogic>();
+
 	DockTab->SetContent(SNew(SUniversalActorTweakerWindow, UniversalTweakerLogic.ToSharedRef()));
 	return DockTab;
 }
@@ -70,7 +69,6 @@ void FUniversalActorTweakerModule::RegisterMenus()
 {
 	// Owner will be used for cleanup in call to UToolMenus::UnregisterOwner
 	FToolMenuOwnerScoped OwnerScoped(this);
-
 	{
 		UToolMenu* Menu = UToolMenus::Get()->ExtendMenu("LevelEditor.MainMenu.Window");
 		{

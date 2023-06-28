@@ -1,5 +1,14 @@
 ﻿#pragma once
+
 #include "CoreMinimal.h"
+
+enum class EPropertyOwnerType
+{
+	None,
+	Actor,
+	Component,
+	PrimitiveComponent
+};
 
 class FUniversalActorTweakerLogic
 {
@@ -13,8 +22,9 @@ private:
 	void PopulateActorsArray(const UWorld* InContextWorld, TArray<TObjectPtr<AActor>>& OutArrayToPopulate) const;
 	void GetValueFromComponent(const FPropertyChangedEvent& InPropertyChanged, void* InNewValue);
 	void GetValueFromPrimitiveComponent(const FPropertyChangedEvent& InPropertyChanged, void* InNewValue) const;
-	void SetValueInPrimitiveComponentContainer(const TObjectPtr<AActor> InActor, const FPropertyChangedEvent& InPropertyChanged, const void* InNewValue) const;
-	void SetValueInObjectContainer(TObjectPtr<UObject> InContainer,const TObjectPtr<AActor> InActor, const FPropertyChangedEvent& InPropertyChanged, const void* InNewValue);
+	void SetValueInPrimitiveComponentContainer(const FPropertyChangedEvent& InPropertyChanged, const TObjectPtr<AActor> InActor, const void* InNewValue) const;
+	void SetValueInObjectContainer(const FPropertyChangedEvent& InPropertyChanged, TObjectPtr<UObject> InContainer, const void* InNewValue);
+	EPropertyOwnerType GetValue(const FPropertyChangedEvent& InPropertyChanged, const UClass* InClassToGetFrom, void* OutNewValue);
 
 private:
 	FString ComponentName;

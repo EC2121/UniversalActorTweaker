@@ -15,6 +15,7 @@ void FUniversalActorTweakerLogic::OnPropertyChanged(const FPropertyChangedEvent&
 {
 	TArray<TObjectPtr<AActor>> FoundActors;
 	const UWorld* World = GetWorld();
+
 	if (World == nullptr)
 	{
 		return;
@@ -30,33 +31,7 @@ void FUniversalActorTweakerLogic::OnPropertyChanged(const FPropertyChangedEvent&
 
 	void* NewValue = InPropertyChanged.Property->AllocateAndInitializeValue();
 	const UClass* ChangedClass = InPropertyChanged.Property->GetOwnerClass();
-
-	bool bIsComponent = false;
-	bool bIsAnActor = false;
-	bool bIsPrimitiveComponent = false;
-
-	if (ChangedClass != nullptr)
-	{
-		if (ChangedClass->IsChildOf(UActorComponent::StaticClass()))
-		{
-			GetValueFromComponent(InPropertyChanged, NewValue);
-			bIsComponent = true;
-		}
-		else if (ChangedClass->IsChildOf(AActor::StaticClass()))
-		{
-			InPropertyChanged.Property->GetValue_InContainer(Cast<AActor>(ClickedObject), NewValue);
-			bIsAnActor = true;
-		}
-		else
-		{
-			return;
-		}
-	}
-	else
-	{
-		GetValueFromPrimitiveComponent(InPropertyChanged, NewValue);
-		bIsPrimitiveComponent = true;
-	}
+	EPropertyOwnerType OwnerType = GetValue(InPropertyChanged, ChangedClass, NewValue);
 
 	if (NewValue != nullptr)
 	{
@@ -64,26 +39,33 @@ void FUniversalActorTweakerLogic::OnPropertyChanged(const FPropertyChangedEvent&
 
 		for (AActor* FoundActor : FoundActors)
 		{
-			if (bIsPrimitiveComponent)
+			switch (OwnerType)
 			{
-				SetValueInPrimitiveComponentContainer(FoundActor, InPropertyChanged, NewValue);
-			}
-			else if (bIsComponent)
-			{
-				TSet<UActorComponent*> ActorComponents = FoundActor->GetComponents();
+				case EPropertyOwnerType::Actor:
+					SetValueInObjectContainer(InPropertyChanged, FoundActor, NewValue);
+					break;
 
-				for (UActorComponent* ActorComponent : ActorComponents)
-				{
-					FString ActorPath = ActorComponent->GetPathName();
-					if (ActorPath.Contains(ComponentName))
+				case EPropertyOwnerType::Component:
 					{
-						SetValueInObjectContainer(ActorComponent, FoundActor, InPropertyChanged, NewValue);
+						TSet<UActorComponent*> ActorComponents = FoundActor->GetComponents();
+						for (UActorComponent* ActorComponent : ActorComponents)
+						{
+							FString ActorPath = ActorComponent->GetPathName();
+							if (ActorPath.Contains(ComponentName))
+							{
+								SetValueInObjectContainer(InPropertyChanged, ActorComponent, NewValue);
+							}
+						}
 					}
-				}
-			}
-			else if (bIsAnActor)
-			{
-				SetValueInObjectContainer(FoundActor, FoundActor, InPropertyChanged, NewValue);
+					break;
+
+				case EPropertyOwnerType::PrimitiveComponent:
+					SetValueInPrimitiveComponentContainer(InPropertyChanged, FoundActor, NewValue);
+					break;
+
+				case EPropertyOwnerType::None:
+				default:
+					return;
 			}
 		}
 	}
@@ -93,7 +75,7 @@ UWorld* FUniversalActorTweakerLogic::GetWorld()
 {
 	if (GEditor)
 	{
-		for (const auto& Context : GEditor->GetWorldContexts())
+		for (const FWorldContext& Context : GEditor->GetWorldContexts())
 		{
 			if (Context.WorldType == EWorldType::Editor && Context.World())
 			{
@@ -101,6 +83,7 @@ UWorld* FUniversalActorTweakerLogic::GetWorld()
 			}
 		}
 	}
+
 	return nullptr;
 }
 
@@ -139,7 +122,7 @@ void FUniversalActorTweakerLogic::GetValueFromComponent(const FPropertyChangedEv
 void FUniversalActorTweakerLogic::GetValueFromPrimitiveComponent(const FPropertyChangedEvent& InPropertyChanged, void* InNewValue) const
 {
 	UActorComponent* PrimitiveComponent = Cast<AActor>(ClickedObject)->GetComponentByClass(UPrimitiveComponent::StaticClass());
-	if (PrimitiveComponent != nullptr)
+	if (IsValid(PrimitiveComponent))
 	{
 		const FBodyInstance* BodyInstance = Cast<UPrimitiveComponent>(PrimitiveComponent)->GetBodyInstance();
 		if (BodyInstance != nullptr)
@@ -149,19 +132,25 @@ void FUniversalActorTweakerLogic::GetValueFromPrimitiveComponent(const FProperty
 	}
 }
 
-void FUniversalActorTweakerLogic::SetValueInPrimitiveComponentContainer(const TObjectPtr<AActor> InActor, const FPropertyChangedEvent& InPropertyChanged, const void* InNewValue) const
+void FUniversalActorTweakerLogic::SetValueInPrimitiveComponentContainer(const FPropertyChangedEvent& InPropertyChanged, const TObjectPtr<AActor> InActor, const void* InNewValue) const
 {
 	UActorComponent* PrimitiveComponent = InActor->GetComponentByClass(UPrimitiveComponent::StaticClass());
+
 	if (PrimitiveComponent != nullptr)
 	{
 		FBodyInstance* BodyInstance = Cast<UPrimitiveComponent>(PrimitiveComponent)->GetBodyInstance();
-		InPropertyChanged.Property->SetValue_InContainer(BodyInstance, InNewValue);
+		if (BodyInstance != nullptr)
+		{
+			InPropertyChanged.Property->SetValue_InContainer(BodyInstance, InNewValue);
+		}
+
 	}
 }
 
-void FUniversalActorTweakerLogic::SetValueInObjectContainer(TObjectPtr<UObject> InContainer, const TObjectPtr<AActor> InActor, const FPropertyChangedEvent& InPropertyChanged, const void* InNewValue)
+void FUniversalActorTweakerLogic::SetValueInObjectContainer(const FPropertyChangedEvent& InPropertyChanged, TObjectPtr<UObject> InContainer, const void* InNewValue)
 {
 	FProperty* FoundProperty = InContainer->GetClass()->FindPropertyByName(InPropertyChanged.GetPropertyName());
+
 	if (FoundProperty != nullptr)
 	{
 		InContainer->Modify(true);
@@ -174,6 +163,30 @@ void FUniversalActorTweakerLogic::SetValueInObjectContainer(TObjectPtr<UObject> 
 
 		InContainer->PostEditChangeProperty(Args);
 	}
+}
+
+EPropertyOwnerType FUniversalActorTweakerLogic::GetValue(const FPropertyChangedEvent& InPropertyChanged, const UClass* InClassToGetFrom, void* NewValue)
+{
+	if (InClassToGetFrom != nullptr)
+	{
+		if (InClassToGetFrom->IsChildOf(UActorComponent::StaticClass()))
+		{
+			GetValueFromComponent(InPropertyChanged, NewValue);
+			return EPropertyOwnerType::Component;
+		}
+		if (InClassToGetFrom->IsChildOf(AActor::StaticClass()))
+		{
+			InPropertyChanged.Property->GetValue_InContainer(Cast<AActor>(ClickedObject), NewValue);
+			return EPropertyOwnerType::Actor;
+		}
+	}
+	else
+	{
+		GetValueFromPrimitiveComponent(InPropertyChanged, NewValue);
+		return EPropertyOwnerType::PrimitiveComponent;
+	}
+
+	return EPropertyOwnerType::None;
 }
 
 #undef LOCTEXT_NAMESPACE

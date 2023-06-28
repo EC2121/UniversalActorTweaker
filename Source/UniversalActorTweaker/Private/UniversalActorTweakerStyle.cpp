@@ -1,12 +1,11 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "UniversalActorTweakerStyle.h"
-#include "UniversalActorTweaker.h"
 #include "Framework/Application/SlateApplication.h"
-#include "Styling/SlateStyleRegistry.h"
-#include "Slate/SlateGameResources.h"
 #include "Interfaces/IPluginManager.h"
+#include "Slate/SlateGameResources.h"
 #include "Styling/SlateStyleMacros.h"
+#include "Styling/SlateStyleRegistry.h"
 
 #define RootToContentDir Style->RootToContentDir
 
@@ -33,7 +32,6 @@ FName FUniversalActorTweakerStyle::GetStyleSetName()
 	static FName StyleSetName(TEXT("UniversalActorTweakerStyle"));
 	return StyleSetName;
 }
-
 
 const FVector2D Icon16x16(16.0f, 16.0f);
 const FVector2D Icon20x20(20.0f, 20.0f);

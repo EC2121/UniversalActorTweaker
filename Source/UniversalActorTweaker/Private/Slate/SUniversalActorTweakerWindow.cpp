@@ -12,45 +12,44 @@
 void SUniversalActorTweakerWindow::Construct(const FArguments& InArgs, TSharedRef<FUniversalActorTweakerLogic> InUniversalTweaker)
 {
 	UniversalActorTweakerLogic = InUniversalTweaker;
-	
+
 	FSceneOutlinerModule& SceneOutlinerModule = FModuleManager::LoadModuleChecked<FSceneOutlinerModule>("SceneOutliner");
 	FPropertyEditorModule& EditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
-	
+
 	FSceneOutlinerInitializationOptions InitOptions;
 	InitOptions.OutlinerIdentifier = TEXT("UniversalActorTweakerOutliner");
-	
-	SceneOutliner = SceneOutlinerModule.CreateActorPicker(InitOptions, FOnActorPicked::CreateSP(this,
-		                                                      &SUniversalActorTweakerWindow::OnActorPicked));
+
+	SceneOutliner = SceneOutlinerModule.CreateActorPicker(InitOptions, FOnActorPicked::CreateSP(this, &SUniversalActorTweakerWindow::OnActorPicked));
 
 	FDetailsViewArgs DetailsViewArgs;
 	DetailsViewArgs.NameAreaSettings = FDetailsViewArgs::HideNameArea;
-	DetailsViewArgs.bAllowSearch = true;
-	DetailsViewArgs.bShowOptions = true;
-	DetailsViewArgs.bShowModifiedPropertiesOption = true;
+
 	DetailsView = EditorModule.CreateDetailView(DetailsViewArgs);
-	DetailsView->OnFinishedChangingProperties().AddSP(InUniversalTweaker, &FUniversalActorTweakerLogic::OnPropertyChanged);
+	DetailsView->OnFinishedChangingProperties().AddSP(this, &SUniversalActorTweakerWindow::OnPropertyChanged);
+
 	ChildSlot
 	[
-
 		SNew(SVerticalBox)
+
 		+ SVerticalBox::Slot()
 		[
 			SNew(SHorizontalBox)
+
 			+ SHorizontalBox::Slot()
 			.AutoWidth()
 			[
 				SNew(SScrollBox)
 				.Orientation(Orient_Vertical)
-				.ScrollBarVisibility(EVisibility::Visible)
 				.ScrollBarAlwaysVisible(true)
+
 				+ SScrollBox::Slot()
-				.HAlign(EHorizontalAlignment::HAlign_Center)
+				.HAlign(HAlign_Center)
 				[
 					SceneOutliner.ToSharedRef()
 				]
 			]
 			+ SHorizontalBox::Slot()
-			.FillWidth(1)
+			.FillWidth(1.f)
 			[
 				DetailsView.ToSharedRef()
 			]
@@ -64,6 +63,14 @@ void SUniversalActorTweakerWindow::OnActorPicked(AActor* InActor) const
 	{
 		UniversalActorTweakerLogic.Pin()->SetClickedObject(InActor);
 		DetailsView->SetObject(InActor, true);
+	}
+}
+
+void SUniversalActorTweakerWindow::OnPropertyChanged(const FPropertyChangedEvent& InPropertyChanged) const
+{
+	if (UniversalActorTweakerLogic.IsValid())
+	{
+		UniversalActorTweakerLogic.Pin()->OnPropertyChanged(InPropertyChanged);
 	}
 }
 
