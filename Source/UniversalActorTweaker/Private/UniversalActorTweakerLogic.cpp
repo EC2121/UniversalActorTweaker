@@ -20,7 +20,6 @@ void FUniversalActorTweakerLogic::OnPropertyChanged(const FPropertyChangedEvent&
 	{
 		return;
 	}
-
 	PopulateActorsArray(World, FoundActors);
 	const int32 NumberOfObjectsBeginEdited = InPropertyChanged.GetNumObjectsBeingEdited();
 
@@ -31,12 +30,11 @@ void FUniversalActorTweakerLogic::OnPropertyChanged(const FPropertyChangedEvent&
 
 	void* NewValue = InPropertyChanged.Property->AllocateAndInitializeValue();
 	const UClass* ChangedClass = InPropertyChanged.Property->GetOwnerClass();
-	EPropertyOwnerType OwnerType = GetValue(InPropertyChanged, ChangedClass, NewValue);
+	const EPropertyOwnerType OwnerType = GetValue(InPropertyChanged, ChangedClass, NewValue);
 
 	if (NewValue != nullptr)
 	{
 		const FScopedTransaction Transaction(LOCTEXT("FUniversalActorTweakerSnapshot", "Property changed from Universal Tweaker"));
-
 		for (AActor* FoundActor : FoundActors)
 		{
 			switch (OwnerType)
@@ -90,10 +88,10 @@ UWorld* FUniversalActorTweakerLogic::GetWorld()
 void FUniversalActorTweakerLogic::SetComponentName(const FString InComponentFullPath)
 {
 	FString EditedComponentPath = InComponentFullPath;
-	TArray<FString> SplitedString;
-	InComponentFullPath.ParseIntoArray(SplitedString,TEXT("."), true);
+	TArray<FString> SplitString;
+	InComponentFullPath.ParseIntoArray(SplitString,TEXT("."), true);
 
-	ComponentName = SplitedString.Last();
+	ComponentName = SplitString.Last();
 }
 
 void FUniversalActorTweakerLogic::PopulateActorsArray(const UWorld* InWorldContext, TArray<TObjectPtr<AActor>>& OutArrayToPopulate) const
@@ -122,6 +120,7 @@ void FUniversalActorTweakerLogic::GetValueFromComponent(const FPropertyChangedEv
 void FUniversalActorTweakerLogic::GetValueFromPrimitiveComponent(const FPropertyChangedEvent& InPropertyChanged, void* InNewValue) const
 {
 	UActorComponent* PrimitiveComponent = Cast<AActor>(ClickedObject)->GetComponentByClass(UPrimitiveComponent::StaticClass());
+
 	if (IsValid(PrimitiveComponent))
 	{
 		const FBodyInstance* BodyInstance = Cast<UPrimitiveComponent>(PrimitiveComponent)->GetBodyInstance();
@@ -131,7 +130,6 @@ void FUniversalActorTweakerLogic::GetValueFromPrimitiveComponent(const FProperty
 		}
 	}
 }
-
 void FUniversalActorTweakerLogic::SetValueInPrimitiveComponentContainer(const FPropertyChangedEvent& InPropertyChanged, const TObjectPtr<AActor> InActor, const void* InNewValue) const
 {
 	UActorComponent* PrimitiveComponent = InActor->GetComponentByClass(UPrimitiveComponent::StaticClass());
@@ -150,12 +148,10 @@ void FUniversalActorTweakerLogic::SetValueInPrimitiveComponentContainer(const FP
 void FUniversalActorTweakerLogic::SetValueInObjectContainer(const FPropertyChangedEvent& InPropertyChanged, TObjectPtr<UObject> InContainer, const void* InNewValue)
 {
 	FProperty* FoundProperty = InContainer->GetClass()->FindPropertyByName(InPropertyChanged.GetPropertyName());
-
 	if (FoundProperty != nullptr)
 	{
 		InContainer->Modify(true);
 		InContainer->PreEditChange(FoundProperty);
-
 		FoundProperty->SetValue_InContainer(InContainer, InNewValue);
 
 		FPropertyChangedEvent Args(FoundProperty);
@@ -165,24 +161,25 @@ void FUniversalActorTweakerLogic::SetValueInObjectContainer(const FPropertyChang
 	}
 }
 
-EPropertyOwnerType FUniversalActorTweakerLogic::GetValue(const FPropertyChangedEvent& InPropertyChanged, const UClass* InClassToGetFrom, void* NewValue)
+EPropertyOwnerType FUniversalActorTweakerLogic::GetValue(const FPropertyChangedEvent& InPropertyChanged, const UClass* InClassToGetFrom, void* OutNewValue)
 {
 	if (InClassToGetFrom != nullptr)
 	{
 		if (InClassToGetFrom->IsChildOf(UActorComponent::StaticClass()))
 		{
-			GetValueFromComponent(InPropertyChanged, NewValue);
+			GetValueFromComponent(InPropertyChanged, OutNewValue);
 			return EPropertyOwnerType::Component;
 		}
 		if (InClassToGetFrom->IsChildOf(AActor::StaticClass()))
 		{
-			InPropertyChanged.Property->GetValue_InContainer(Cast<AActor>(ClickedObject), NewValue);
+			
+			InPropertyChanged.Property->GetValue_InContainer(Cast<AActor>(ClickedObject), OutNewValue);
 			return EPropertyOwnerType::Actor;
 		}
 	}
 	else
 	{
-		GetValueFromPrimitiveComponent(InPropertyChanged, NewValue);
+		GetValueFromPrimitiveComponent(InPropertyChanged, OutNewValue);
 		return EPropertyOwnerType::PrimitiveComponent;
 	}
 
